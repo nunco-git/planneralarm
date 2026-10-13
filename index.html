@@ -9,7 +9,7 @@
 <style>
   :root{
     --bg:#f1f3f5; --card:#ffffff; --fg:#212529; --muted:#868e96; --line:#dee2e6;
-    --accent:#f08c00; --head:#fff3bf; --head-fg:#4a2f00; --other:#f8f9fa; --today:#fff3bf;
+    --accent:#f6a53f; --head:#fff3bf; --head-fg:#4a2f00; --other:#f8f9fa; --today:#fff3bf;
     --red:#e03131; --blue:#1c7ed6;
   }
   @media (prefers-color-scheme: dark){
@@ -81,7 +81,7 @@
   @media (prefers-color-scheme: dark){ body.desk{background:linear-gradient(160deg,#2b2412,#3a2f10 55%,#5c3d12)} }
   .lcard{max-width:380px;margin:0 auto;background:var(--card);border-radius:20px;padding:30px 26px 22px;text-align:center;
     box-shadow:0 14px 40px rgba(120,70,0,.22)}
-  .logo{width:68px;height:68px;margin:0 auto 14px;border-radius:20px;background:linear-gradient(135deg,#ffa94d,#f08c00);
+  .logo{width:68px;height:68px;margin:0 auto 14px;border-radius:20px;background:linear-gradient(135deg,#ffc078,#f6a53f);
     display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 6px 16px rgba(240,140,0,.4)}
   .lcard h2{margin:0 0 6px;font-size:21px}
   .lcard .sub{margin:0 0 22px;color:var(--muted);font-size:14px}
@@ -271,7 +271,7 @@ const HOLIDAYS = {
   "2027-09-16":"추석 연휴","2027-10-03":"개천절","2027-10-04":"대체공휴일","2027-10-09":"한글날","2027-10-11":"대체공휴일",
   "2027-12-25":"성탄절","2027-12-27":"대체공휴일"
 };
-const COLORS = ["#f08c00","#1c7ed6","#2f9e44","#e03131","#7048e8","#868e96"];
+const COLORS = ["#f6a53f","#1c7ed6","#2f9e44","#e03131","#7048e8","#868e96"];
 const DOW = ["일","월","화","수","목","금","토"];
 const $ = id => document.getElementById(id);
 // 프로그램(exe)에서 열었을 때: ?desktop=<포트>&state=<임의값>
