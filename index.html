@@ -196,7 +196,8 @@ async function load(){
     snap.forEach(s => {
       const d = s.data(); if (d.deleted || !d.date) return;
       events.push({ title: d.title||"", date: d.date, end: d.end||"", time: d.time||"", repeat: d.repeat||"none",
-        color: Number(d.color)||0, memo: d.memo||"", holiday: !!d.holiday });
+        color: Number(d.color)||0, memo: d.memo||"", holiday: !!d.holiday,
+        kind: d.kind||"", dept: d.dept||"", team: d.team||"" });
     });
     $("msg").classList.add("hidden"); $("app").classList.remove("hidden");
     render();
@@ -226,7 +227,7 @@ function render(){
       const ch = document.createElement("span");
       ch.className = "chip";
       ch.style.background = COLORS[e.color % COLORS.length];
-      ch.textContent = (e.time ? e.time + " " : "") + e.title;
+      ch.textContent = (e.time ? e.time + " " : "") + (e.kind ? "[" + e.kind + "]" : "") + e.title;
       c.appendChild(ch);
     });
     if (list.length > max){ const mo = document.createElement("div"); mo.className = "more"; mo.textContent = `+${list.length-max}개 더`; c.appendChild(mo); }
@@ -248,6 +249,9 @@ function renderDay(){
       <div class="t"></div><div class="m"></div></div>`;
     row.querySelector(".t").innerHTML = "";
     row.querySelector(".t").append((e.time ? e.time + "  " : "종일  ") + e.title + span);
+    const org = [e.dept, e.team].filter(Boolean).join(" / ");
+    row.querySelector(".t").append(...(e.kind ? [Object.assign(document.createElement("span"), {className:"tag", textContent:e.kind})] : []),
+      ...(org ? [Object.assign(document.createElement("span"), {className:"tag", textContent:org})] : []));
     row.querySelector(".m").textContent = e.memo;
     box.appendChild(row);
   });
