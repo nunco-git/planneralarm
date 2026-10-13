@@ -62,13 +62,19 @@
 </head>
 <body>
 <header>
-  <h1>📅 일정 달력 <span style="font-weight:400;font-size:13px;opacity:.75">(조회 전용)</span></h1>
+  <h1>📅 내 일정 달력 <span style="font-weight:400;font-size:13px;opacity:.75">(조회 전용)</span></h1>
   <span id="who" class="hidden"></span>
   <button id="btnIn" class="primary">구글 로그인</button>
   <button id="btnOut" class="hidden">로그아웃</button>
 </header>
 <main>
-  <div id="msg" class="msg">로그인하면 내 일정과 부서·팀에 공유된 일정을 볼 수 있습니다.</div>
+  <div id="msg" class="msg">로그인하면 내 일정을 볼 수 있습니다.</div>
+  <section id="desk" class="panel hidden">
+    <h2>반복알람 프로그램 로그인</h2>
+    <p id="deskMsg"></p>
+    <button id="deskSend" class="primary hidden">이 계정으로 프로그램에 로그인</button>
+    <p style="color:var(--muted);font-size:13px">버튼을 누르면 이 PC에서 실행 중인 반복알람 프로그램으로 로그인 정보가 전달됩니다. 직접 연 페이지라면 누르지 마세요.</p>
+  </section>
   <section id="app" class="hidden">
     <div class="bar">
       <button id="prev" aria-label="이전 달">◀</button>
@@ -76,11 +82,6 @@
       <button id="next" aria-label="다음 달">▶</button>
       <button id="today">오늘</button>
       <button id="reload" title="다시 불러오기">↻</button>
-      <div class="filters">
-        <label><input type="checkbox" id="fMine" checked> 내 일정 <span id="cMine"></span></label>
-        <label><input type="checkbox" id="fTeam" checked> 팀 공유 <span id="cTeam"></span></label>
-        <label><input type="checkbox" id="fDept" checked> 부서 공유 <span id="cDept"></span></label>
-      </div>
     </div>
     <div class="grid" id="grid"></div>
     <div class="panel"><h2 id="dayTitle"></h2><div id="dayList"></div></div>
@@ -90,7 +91,7 @@
 <script type="module">
 // ▼▼▼ Firebase 콘솔 > 프로젝트 설정 > 내 앱(웹)에서 복사한 값으로 바꾸세요 ▼▼▼
 const FIREBASE_CONFIG = {
-   apiKey: "AIzaSyDZS8cacPdO-c3BdaXH5jNgHFdJtFCeTo8",
+  apiKey: "AIzaSyDZS8cacPdO-c3BdaXH5jNgHFdJtFCeTo8",
   authDomain: "planneralarm-6271e.firebaseapp.com",
   projectId: "planneralarm-6271e",
   storageBucket: "planneralarm-6271e.firebasestorage.app",
@@ -103,7 +104,7 @@ const FIREBASE_CONFIG = {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs }
+import { getFirestore, collection, getDocs }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const HOLIDAYS = {
@@ -120,12 +121,16 @@ const HOLIDAYS = {
 };
 const COLORS = ["#f08c00","#1c7ed6","#2f9e44","#e03131","#7048e8","#868e96"];
 const DOW = ["일","월","화","수","목","금","토"];
-const NO_GROUP = "-";
 const $ = id => document.getElementById(id);
+// 프로그램(exe)에서 열었을 때: ?desktop=<포트>&state=<임의값>
+const qs = new URLSearchParams(location.search);
+const deskPort = /^\d{4,5}$/.test(qs.get("desktop") || "") ? qs.get("desktop") : null;
+const deskState = /^[A-Za-z0-9_-]{16,128}$/.test(qs.get("state") || "") ? qs.get("state") : null;
+const desktopMode = !!(deskPort && deskState);
 const pad = n => String(n).padStart(2, "0");
 const isoOf = dt => `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
 
-let auth, db, user = null, events = [], profile = {};
+let auth, db, user = null, events = [];
 let view = new Date(); view.setDate(1);
 let selected = isoOf(new Date());
 
@@ -143,40 +148,21 @@ function eventOn(e, d){
   if (startsOn(e, d)) return true;
   return (!e.repeat || e.repeat === "none") && !!e.end && e.date <= d && d <= e.end;
 }
-const holName = d => HOLIDAYS[d] || (events.find(e => e.mine && e.holiday && eventOn(e, d))?.title) || "";
-const passes = e => (e.mine && $("fMine").checked) || (!e.mine && ((e.scopes.has("팀") && $("fTeam").checked) || (e.scopes.has("부서") && $("fDept").checked)));
-const dayEvents = d => events.filter(e => passes(e) && eventOn(e, d))
+const holName = d => HOLIDAYS[d] || (events.find(e => e.holiday && eventOn(e, d))?.title) || "";
+const dayEvents = d => events.filter(e => eventOn(e, d))
   .sort((a,b) => (a.time||"").localeCompare(b.time||"") || a.title.localeCompare(b.title));
 
-// ---- 불러오기
-function toEvent(d, mine, scope){
-  return { key: `${d.ownerUid}_${d.id}`, title: d.title||"", date: d.date||"", end: d.end||"", time: d.time||"",
-    repeat: d.repeat||"none", color: Number(d.color)||0, memo: d.memo||"", holiday: !!d.holiday,
-    owner: d.ownerName||"", mine, scopes: new Set(scope ? [scope] : []), shareTeam: !!d.shareTeam, shareDept: !!d.shareDept };
-}
+// ---- 불러오기 (users/<내 uid>/events)
 async function load(){
   showMsg("불러오는 중…");
   try{
-    const ps = await getDoc(doc(db, "users", user.uid));
-    profile = ps.exists() ? ps.data() : {};
-    const deptId = profile.deptId || NO_GROUP, teamId = profile.teamId || NO_GROUP;
-    const col = collection(db, "events"), map = new Map();
-    const run = async (q, mine, scope) => {
-      (await getDocs(q)).forEach(s => {
-        const d = s.data(); if (d.deleted || !d.date) return;
-        if (!mine && d.ownerUid === user.uid) return;
-        const k = `${d.ownerUid}_${d.id}`;
-        if (map.has(k)) { if (scope) map.get(k).scopes.add(scope); return; }
-        map.set(k, toEvent(d, mine, scope));
-      });
-    };
-    await run(query(col, where("ownerUid", "==", user.uid)), true);
-    if (deptId !== NO_GROUP) await run(query(col, where("shareDept","==",true), where("deptId","==",deptId)), false, "부서");
-    if (teamId !== NO_GROUP) await run(query(col, where("shareTeam","==",true), where("teamId","==",teamId)), false, "팀");
-    events = [...map.values()];
-    $("cMine").textContent = `(${events.filter(e=>e.mine).length})`;
-    $("cTeam").textContent = `(${events.filter(e=>!e.mine && e.scopes.has("팀")).length})`;
-    $("cDept").textContent = `(${events.filter(e=>!e.mine && e.scopes.has("부서")).length})`;
+    const snap = await getDocs(collection(db, "users", user.uid, "events"));
+    events = [];
+    snap.forEach(s => {
+      const d = s.data(); if (d.deleted || !d.date) return;
+      events.push({ title: d.title||"", date: d.date, end: d.end||"", time: d.time||"", repeat: d.repeat||"none",
+        color: Number(d.color)||0, memo: d.memo||"", holiday: !!d.holiday });
+    });
     $("msg").classList.add("hidden"); $("app").classList.remove("hidden");
     render();
   }catch(err){
@@ -203,9 +189,9 @@ function render(){
     const list = dayEvents(iso), max = 3;
     list.slice(0, max).forEach(e => {
       const ch = document.createElement("span");
-      ch.className = "chip" + (e.mine ? "" : " shared");
+      ch.className = "chip";
       ch.style.background = COLORS[e.color % COLORS.length];
-      ch.textContent = (e.mine ? "" : `[${e.owner}] `) + (e.time ? e.time + " " : "") + e.title;
+      ch.textContent = (e.time ? e.time + " " : "") + e.title;
       c.appendChild(ch);
     });
     if (list.length > max){ const mo = document.createElement("div"); mo.className = "more"; mo.textContent = `+${list.length-max}개 더`; c.appendChild(mo); }
@@ -222,14 +208,11 @@ function renderDay(){
   if (!list.length){ box.innerHTML = '<div class="msg" style="padding:10px">일정이 없습니다.</div>'; return; }
   list.forEach(e => {
     const row = document.createElement("div"); row.className = "ev";
-    const tag = e.mine ? ((e.shareTeam||e.shareDept) ? `<span class="tag">공유중</span>` : "")
-      : `<span class="tag">${e.owner} · ${[...e.scopes].join("·")}</span>`;
     const span = e.end && e.end !== e.date ? ` (${e.date} ~ ${e.end})` : "";
     row.innerHTML = `<div class="bar-c" style="background:${COLORS[e.color % COLORS.length]}"></div><div>
       <div class="t"></div><div class="m"></div></div>`;
     row.querySelector(".t").innerHTML = "";
     row.querySelector(".t").append((e.time ? e.time + "  " : "종일  ") + e.title + span);
-    row.querySelector(".t").insertAdjacentHTML("beforeend", tag);
     row.querySelector(".m").textContent = e.memo;
     box.appendChild(row);
   });
@@ -249,19 +232,31 @@ function start(){
     catch(e){ if (e.code !== "auth/popup-closed-by-user") showMsg("로그인하지 못했습니다: " + (e.code||e.message), true); }
   };
   $("btnOut").onclick = () => signOut(auth);
+  $("deskSend").onclick = () => {
+    if (!user) return;
+    const q = new URLSearchParams({ state: deskState, refresh: user.refreshToken, uid: user.uid,
+      name: user.displayName || "", email: user.email || "" });
+    $("deskMsg").textContent = "프로그램으로 전달했습니다. 이 창을 닫으셔도 됩니다.";
+    location.href = `http://127.0.0.1:${deskPort}/?` + q.toString();
+  };
   onAuthStateChanged(auth, u => {
     user = u;
     $("btnIn").classList.toggle("hidden", !!u); $("btnOut").classList.toggle("hidden", !u);
     $("who").classList.toggle("hidden", !u);
+    if (desktopMode){
+      $("msg").classList.add("hidden"); $("app").classList.add("hidden"); $("desk").classList.remove("hidden");
+      $("deskMsg").textContent = u ? `${u.displayName || u.email} 계정으로 로그인되어 있습니다.` : "위쪽의 '구글 로그인' 버튼으로 로그인하세요.";
+      $("deskSend").classList.toggle("hidden", !u);
+      return;
+    }
     if (u){ $("who").textContent = u.displayName || u.email; load(); }
-    else { events = []; showMsg("로그인하면 내 일정과 부서·팀에 공유된 일정을 볼 수 있습니다."); }
+    else { events = []; showMsg("로그인하면 내 일정을 볼 수 있습니다."); }
   });
 }
 $("prev").onclick = () => { view.setMonth(view.getMonth()-1); render(); };
 $("next").onclick = () => { view.setMonth(view.getMonth()+1); render(); };
 $("today").onclick = () => { view = new Date(); view.setDate(1); selected = isoOf(new Date()); render(); };
 $("reload").onclick = () => user && load();
-["fMine","fTeam","fDept"].forEach(id => $(id).onchange = render);
 start();
 </script>
 </body>
