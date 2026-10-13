@@ -51,6 +51,30 @@
   .msg{padding:24px;text-align:center;color:var(--muted)}
   .msg.err{color:var(--red)}
   .hidden{display:none!important}
+  /* ---- 프로그램 로그인(작은 창) ---- */
+  body.desk{background:linear-gradient(160deg,#fff3bf 0%,#ffe066 45%,#ffa94d 100%);min-height:100vh;display:flex;align-items:center;justify-content:center}
+  body.desk header{display:none}
+  body.desk main{padding:16px;max-width:none;width:100%}
+  @media (prefers-color-scheme: dark){ body.desk{background:linear-gradient(160deg,#2b2412,#3a2f10 55%,#5c3d12)} }
+  .lcard{max-width:380px;margin:0 auto;background:var(--card);border-radius:20px;padding:30px 26px 22px;text-align:center;
+    box-shadow:0 14px 40px rgba(120,70,0,.22)}
+  .logo{width:68px;height:68px;margin:0 auto 14px;border-radius:20px;background:linear-gradient(135deg,#ffa94d,#f08c00);
+    display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 6px 16px rgba(240,140,0,.4)}
+  .lcard h2{margin:0 0 6px;font-size:21px}
+  .lcard .sub{margin:0 0 22px;color:var(--muted);font-size:14px}
+  .gbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px 14px;border-radius:10px;
+    background:#fff;color:#3c4043;border:1px solid #dadce0;font-size:15px;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .gbtn:hover{box-shadow:0 2px 8px rgba(0,0,0,.18);border-color:#c6c9cc}
+  .gbtn svg{width:20px;height:20px}
+  .who2{display:flex;align-items:center;gap:12px;text-align:left;background:var(--other);border:1px solid var(--line);
+    border-radius:12px;padding:10px 12px;margin-bottom:14px}
+  .who2 img,.who2 .av{width:42px;height:42px;border-radius:50%;flex:none;background:var(--accent);color:#fff;display:flex;
+    align-items:center;justify-content:center;font-weight:700;font-size:18px;object-fit:cover}
+  .who2 b{display:block} .who2 small{color:var(--muted);word-break:break-all}
+  .lcard .primary{width:100%;padding:12px;font-size:15px;border-radius:10px}
+  .lcard .link{display:inline-block;margin-top:12px;background:none;border:0;color:var(--muted);text-decoration:underline;font-size:13px}
+  .lcard .note{margin:16px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+  .lcard .done{font-size:44px;margin:4px 0 8px}
   code{background:var(--other);padding:1px 5px;border-radius:4px}
   @media (max-width:640px){
     .cell{min-height:58px;padding:3px}
@@ -69,11 +93,21 @@
 </header>
 <main>
   <div id="msg" class="msg">로그인하면 내 일정을 볼 수 있습니다.</div>
-  <section id="desk" class="panel hidden">
-    <h2>반복알람 프로그램 로그인</h2>
-    <p id="deskMsg"></p>
-    <button id="deskSend" class="primary hidden">이 계정으로 프로그램에 로그인</button>
-    <p style="color:var(--muted);font-size:13px">버튼을 누르면 이 PC에서 실행 중인 반복알람 프로그램으로 로그인 정보가 전달됩니다. 직접 연 페이지라면 누르지 마세요.</p>
+  <section id="desk" class="lcard hidden">
+    <div class="logo">⏰</div>
+    <h2>반복알람 로그인</h2>
+    <p class="sub" id="deskSub">구글 계정으로 내 일정을 연결합니다</p>
+    <div id="deskOut">
+      <button id="deskIn" class="gbtn">
+        <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2 1.4-4.7 2.3-8.5 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+        Google 계정으로 로그인</button>
+    </div>
+    <div id="deskIn2" class="hidden">
+      <div class="who2"><span id="deskAv"></span><div><b id="deskName"></b><small id="deskMail"></small></div></div>
+      <button id="deskSend" class="primary">이 계정으로 계속하기</button>
+      <button id="deskOther" class="link">다른 계정으로 로그인</button>
+    </div>
+    <p class="note" id="deskNote">로그인하면 이 PC의 반복알람 프로그램으로 로그인 정보가 전달됩니다.<br>직접 연 페이지라면 계속하지 마세요.</p>
   </section>
   <section id="app" class="hidden">
     <div class="bar">
@@ -127,6 +161,7 @@ const qs = new URLSearchParams(location.search);
 const deskPort = /^\d{4,5}$/.test(qs.get("desktop") || "") ? qs.get("desktop") : null;
 const deskState = /^[A-Za-z0-9_-]{16,128}$/.test(qs.get("state") || "") ? qs.get("state") : null;
 const desktopMode = !!(deskPort && deskState);
+if (desktopMode) document.body.classList.add("desk");
 const pad = n => String(n).padStart(2, "0");
 const isoOf = dt => `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
 
@@ -232,11 +267,15 @@ function start(){
     catch(e){ if (e.code !== "auth/popup-closed-by-user") showMsg("로그인하지 못했습니다: " + (e.code||e.message), true); }
   };
   $("btnOut").onclick = () => signOut(auth);
+  $("deskIn").onclick = () => $("btnIn").onclick();
+  $("deskOther").onclick = () => signOut(auth).then(() => $("btnIn").onclick());
   $("deskSend").onclick = () => {
     if (!user) return;
     const q = new URLSearchParams({ state: deskState, refresh: user.refreshToken, uid: user.uid,
       name: user.displayName || "", email: user.email || "" });
-    $("deskMsg").textContent = "프로그램으로 전달했습니다. 이 창을 닫으셔도 됩니다.";
+    $("deskIn2").classList.add("hidden");
+    $("deskSub").innerHTML = '<div class="done">✅</div>프로그램으로 전달하는 중입니다…';
+    $("deskNote").textContent = "";
     location.href = `http://127.0.0.1:${deskPort}/?` + q.toString();
   };
   onAuthStateChanged(auth, u => {
@@ -245,8 +284,17 @@ function start(){
     $("who").classList.toggle("hidden", !u);
     if (desktopMode){
       $("msg").classList.add("hidden"); $("app").classList.add("hidden"); $("desk").classList.remove("hidden");
-      $("deskMsg").textContent = u ? `${u.displayName || u.email} 계정으로 로그인되어 있습니다.` : "위쪽의 '구글 로그인' 버튼으로 로그인하세요.";
-      $("deskSend").classList.toggle("hidden", !u);
+      $("deskOut").classList.toggle("hidden", !!u);
+      $("deskIn2").classList.toggle("hidden", !u);
+      if (u){
+        $("deskSub").textContent = "이 계정으로 일정을 연결할까요?";
+        $("deskName").textContent = u.displayName || "(이름 없음)";
+        $("deskMail").textContent = u.email || "";
+        $("deskAv").innerHTML = "";
+        if (u.photoURL){ const im = new Image(); im.src = u.photoURL; im.referrerPolicy = "no-referrer"; $("deskAv").className = "";
+          $("deskAv").appendChild(im); im.style.cssText = "width:42px;height:42px;border-radius:50%;display:block"; }
+        else { $("deskAv").className = "av"; $("deskAv").textContent = (u.displayName || u.email || "?").charAt(0).toUpperCase(); }
+      } else $("deskSub").textContent = "구글 계정으로 내 일정을 연결합니다";
       return;
     }
     if (u){ $("who").textContent = u.displayName || u.email; load(); }
